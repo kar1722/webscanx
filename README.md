@@ -285,5 +285,5 @@ For questions or suggestions:
 ---
 
 <p align="center">
-  <strong>Built by Karim Alkashif</strong>
+  <strong>Built by Alkashif X</strong>
 </p>
