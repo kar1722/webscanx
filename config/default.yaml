@@ -1,0 +1,119 @@
+# WebScanX Default Configuration
+# Copy this file and modify for your needs
+
+# Scan settings
+scan:
+  mode: standard  # silent, standard, deep, ai
+  threads: 10
+  timeout: 30
+  delay: 0
+  retries: 3
+  rate_limit: null  # Max requests per second (null = unlimited)
+  follow_redirects: true
+  verify_ssl: false
+  max_depth: 3
+  scope: domain  # domain, subdomain, url
+
+# Authentication settings
+auth:
+  enabled: false
+  type: none  # none, basic, bearer, cookie
+  username: null
+  password: null
+  token: null
+  cookie: null
+  header: null
+
+# AI analysis settings
+ai:
+  enabled: false
+  model: default
+  correlation_enabled: true
+  learning_enabled: true
+  confidence_threshold: 0.7
+  max_context_size: 10000
+  api_key: null
+  api_endpoint: null
+
+# Report settings
+report:
+  formats:
+    - json
+    - html
+  output_dir: ./reports
+  template: null
+  include_evidence: true
+  include_remediation: true
+  severity_filter: null  # null = all, or list: [critical, high, medium]
+
+# Logging settings
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: null  # null = console only, or path to log file
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# HTTP headers
+headers:
+  User-Agent: "WebScanX/1.0"
+  Accept: "*/*"
+  Accept-Encoding: "gzip, deflate"
+  Connection: "keep-alive"
+
+# Module settings
+modules:
+  reconnaissance: true
+  discovery: true
+  vulnerability: true
+  waf_detection: true
+  technology: true
+  ssl: true
+  analysis: true
+
+# Wordlist paths (relative to project root)
+wordlists:
+  directories: wordlists/dirs.txt
+  files: wordlists/files.txt
+  parameters: wordlists/params.txt
+  payloads: wordlists/payloads.txt
+
+# Exclusion settings
+exclusions:
+  extensions:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .css
+    - .js
+    - .svg
+    - .woff
+    - .woff2
+    - .ttf
+    - .eot
+  paths:
+    - /logout
+    - /exit
+    - /signout
+  status_codes:
+    - 404
+    - 410
+    - 500
+    - 502
+    - 503
+
+# Vulnerability testing settings
+vulnerability:
+  severity_levels:
+    - critical
+    - high
+    - medium
+    - low
+    - info
+  test_sqli: true
+  test_xss: true
+  test_lfi: true
+  test_rce: true
+  test_redirect: true
+  test_xxe: true
+  test_ssrf: true
+  test_idor: true
