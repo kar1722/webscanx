@@ -9,7 +9,7 @@
 
 WebScanX is a comprehensive, AI-powered web application security testing framework designed for professional penetration testers and security researchers. It features multiple scanning modes, intelligent analysis, and professional report generation.
 
-## 🌟 Features
+## Features
 
 ### Scanning Modes
 - **Silent Mode**: Stealthy reconnaissance with minimal footprint
@@ -18,12 +18,12 @@ WebScanX is a comprehensive, AI-powered web application security testing framewo
 - **AI-Guided Mode**: Intelligent scanning with AI-powered analysis
 
 ### Core Capabilities
-- 🔍 **Reconnaissance**: DNS enumeration, subdomain discovery, technology fingerprinting
-- 🗺️ **Attack Surface Mapping**: Directory brute-forcing, file discovery, API enumeration
-- 🛡️ **Vulnerability Detection**: SQLi, XSS, RCE, LFI, IDOR, and more
-- 🔥 **WAF/IPS Detection**: Identify and analyze protection mechanisms
-- 🤖 **AI Analysis**: Correlation, pattern recognition, intelligent prioritization
-- 📊 **Professional Reports**: HTML, JSON, XML, PDF formats
+-  **Reconnaissance**: DNS enumeration, subdomain discovery, technology fingerprinting
+-  **Attack Surface Mapping**: Directory brute-forcing, file discovery, API enumeration
+-  **Vulnerability Detection**: SQLi, XSS, RCE, LFI, IDOR, and more
+-  **WAF/IPS Detection**: Identify and analyze protection mechanisms
+-  **AI Analysis**: Correlation, pattern recognition, intelligent prioritization
+-  **Professional Reports**: HTML, JSON, XML, PDF formats
 
 ### Advanced Features
 - **Modular Architecture**: Easy to extend with custom modules
@@ -33,7 +33,7 @@ WebScanX is a comprehensive, AI-powered web application security testing framewo
 - **Authentication**: Support for various auth methods
 - **Learning System**: Improves accuracy over time
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - Python 3.8+
@@ -43,14 +43,14 @@ WebScanX is a comprehensive, AI-powered web application security testing framewo
 
 ```bash
 # Clone the repository
-git clone https://github.com/security-team/webscanx.git
+git clone https://github.com/kar1722/webscanx.git
 cd webscanx
 
 # Install Python dependencies
 pip3 install -r requirements.txt
 
 # Make executable
-chmod +x webscanx.py
+chmod +x INSTALL.sh
 ```
 
 ### Optional Dependencies
@@ -61,7 +61,7 @@ sudo apt-get install libpango1.0-0 libffi-dev shared-mime-info
 pip3 install weasyprint
 ```
 
-## 📖 Usage
+## Usage
 
 ### Basic Usage
 
@@ -142,37 +142,8 @@ Control Options:
   --config              Load configuration from file
 ```
 
-## 📁 Project Structure
 
-```
-webscanx/
-├── webscanx.py           # Main entry point
-├── core/                 # Core components
-│   ├── config.py         # Configuration management
-│   ├── engine.py         # Scan engine
-│   └── state.py          # State management
-├── modules/              # Scanning modules
-│   ├── base.py           # Base module class
-│   ├── reconnaissance.py # Reconnaissance module
-│   ├── discovery.py      # Content discovery
-│   ├── vulnerability.py  # Vulnerability scanner
-│   └── waf_detection.py  # WAF detection
-├── ai/                   # AI components
-│   └── analyzer.py       # AI analysis engine
-├── utils/                # Utilities
-│   ├── http_client.py    # HTTP client
-│   ├── logger.py         # Logging
-│   └── validator.py      # Input validation
-├── reports/              # Report generation
-│   └── generator.py      # Report generator
-├── config/               # Configuration files
-│   └── default.yaml      # Default configuration
-├── wordlists/            # Default wordlists
-├── requirements.txt      # Python dependencies
-└── README.md            # This file
-```
-
-## 🔧 Configuration
+## Configuration
 
 WebScanX can be configured via:
 1. Command line arguments
@@ -210,7 +181,7 @@ Load configuration:
 python3 webscanx.py -t https://example.com --config config.yaml
 ```
 
-## 📊 Report Samples
+## Report Samples
 
 ### HTML Report
 The HTML report includes:
@@ -238,7 +209,7 @@ Machine-readable format for integration with other tools:
 }
 ```
 
-## 🤖 AI Features
+## AI Features
 
 ### Correlation Analysis
 The AI engine identifies relationships between findings:
@@ -262,14 +233,14 @@ Enable AI features:
 python3 webscanx.py -t https://example.com --mode ai --ai
 ```
 
-## 🛡️ Security Considerations
+## Security Considerations
 
 - **Legal**: Only scan systems you have permission to test
 - **Rate Limiting**: Use `--rate-limit` and `--delay` to avoid overwhelming targets
 - **Stealth**: Use `--mode silent` for minimal footprint
 - **Data**: Scan results may contain sensitive information - handle securely
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -291,29 +262,28 @@ python3 webscanx.py -t https://example.com --timeout 60
 python3 webscanx.py -t https://example.com --delay 1 --rate-limit 5
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please:
 1. Fork the repository
 2. Create a feature branch
 3. Submit a pull request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 WebScanX is intended for authorized security testing only. Unauthorized scanning of systems is illegal. The authors are not responsible for misuse of this tool.
 
-## 📧 Contact
+## Contact
 
 For questions or suggestions:
-- Email: security-team@example.com
-- GitHub Issues: https://github.com/security-team/webscanx/issues
+- Email: karimalkashif2003@gmail.com
 
 ---
 
 <p align="center">
-  <strong>Built with ❤️ by the Security Research Team</strong>
+  <strong>Built by Karim Alkashif</strong>
 </p>
