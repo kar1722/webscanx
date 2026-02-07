@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Input Validation Module
-"""
 
 import re
 import ipaddress
@@ -14,15 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def validate_target(target: str) -> bool:
-    """
-    Validate target URL or domain
     
-    Args:
-        target: Target URL or domain
-        
-    Returns:
-        True if valid
-    """
     if not target:
         return False
     
@@ -54,17 +43,8 @@ async def validate_target(target: str) -> bool:
         logger.error(f"Target validation error: {e}")
         return False
 
-
 def is_valid_hostname(hostname: str) -> bool:
-    """
-    Validate hostname format
-    
-    Args:
-        hostname: Hostname to validate
-        
-    Returns:
-        True if valid
-    """
+   
     if not hostname or len(hostname) > 253:
         return False
     
@@ -81,34 +61,16 @@ def is_valid_hostname(hostname: str) -> bool:
     
     return True
 
-
 def is_valid_ip(ip: str) -> bool:
-    """
-    Validate IP address
-    
-    Args:
-        ip: IP address to validate
-        
-    Returns:
-        True if valid
-    """
+   
     try:
         ipaddress.ip_address(ip)
         return True
     except ValueError:
         return False
 
-
 def sanitize_input(input_str: str) -> str:
-    """
-    Sanitize user input
     
-    Args:
-        input_str: Input string
-        
-    Returns:
-        Sanitized string
-    """
     # Remove null bytes
     sanitized = input_str.replace('\x00', '')
     
@@ -120,30 +82,12 @@ def sanitize_input(input_str: str) -> str:
     
     return sanitized.strip()
 
-
 def validate_port(port: int) -> bool:
-    """
-    Validate port number
     
-    Args:
-        port: Port number
-        
-    Returns:
-        True if valid
-    """
     return 1 <= port <= 65535
 
-
 def extract_domain(url: str) -> Optional[str]:
-    """
-    Extract domain from URL
     
-    Args:
-        url: URL string
-        
-    Returns:
-        Domain or None
-    """
     try:
         parsed = urlparse(url)
         return parsed.hostname

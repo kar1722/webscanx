@@ -54,12 +54,6 @@ from reports.generator import ReportGenerator
 
 
 class WebScanX:
-    """
-    Main WebScanX Application Controller
-    
-    Orchestrates all scanning operations, manages state,
-    and coordinates between different engines and modules.
-    """
     
     VERSION = "1.0.0"
     MODES = {
@@ -79,15 +73,7 @@ class WebScanX:
         self.results: Dict[str, Any] = {}
         
     async def initialize(self, args: argparse.Namespace) -> bool:
-        """
-        Initialize all components and validate configuration
         
-        Args:
-            args: Parsed command line arguments
-            
-        Returns:
-            bool: True if initialization successful
-        """
         try:
             # Display banner
             if not args.no_banner:
@@ -136,12 +122,7 @@ class WebScanX:
             return False
     
     async def run_scan(self) -> Dict[str, Any]:
-        """
-        Execute the main scanning workflow
         
-        Returns:
-            Dict containing all scan results
-        """
         try:
             print(f"\n{Fore.CYAN}{'='*60}")
             print(f"{Fore.WHITE}                    STARTING SCAN")
@@ -180,12 +161,7 @@ class WebScanX:
             raise
     
     async def generate_reports(self) -> List[str]:
-        """
-        Generate all requested report formats
-        
-        Returns:
-            List of generated report file paths
-        """
+       
         try:
             print(f"\n{Fore.CYAN}[*] Generating reports...")
             report_files = []
@@ -210,14 +186,14 @@ class WebScanX:
             return []
     
     async def handle_interrupt(self):
-        """Handle user interruption gracefully"""
+
         print(f"{Fore.YELLOW}[*] Saving partial results...")
         if self.engine:
             await self.engine.save_state()
         print(f"{Fore.YELLOW}[*] Partial results saved. Use --resume to continue.")
     
     async def cleanup(self):
-        """Cleanup resources and save final state"""
+
         try:
             if self.engine:
                 await self.engine.cleanup()
@@ -229,12 +205,7 @@ class WebScanX:
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
-    """
-    Create and configure command line argument parser
     
-    Returns:
-        Configured ArgumentParser instance
-    """
     parser = argparse.ArgumentParser(
         prog='webscanx',
         description='WebScanX - Advanced Web Application Security Scanner',
@@ -450,7 +421,7 @@ Modes:
 
 
 async def main():
-    """Main entry point"""
+
     parser = create_argument_parser()
     args = parser.parse_args()
     

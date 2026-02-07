@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-WAF/IPS Detection Module
-
-Detects and analyzes Web Application Firewalls and Intrusion Prevention Systems:
-- WAF fingerprinting
-- Detection method analysis
-- Bypass technique suggestions
-- Rule set identification
-"""
 
 import asyncio
 from typing import Dict, Any, List, Optional
@@ -22,10 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class WAFDetectionModule(BaseModule):
-    """
-    WAF/IPS detection and analysis module
-    """
-    
+  
     MODULE_NAME = "waf_detection"
     MODULE_DESCRIPTION = "WAF/IPS detection and fingerprinting"
     
@@ -104,12 +92,7 @@ class WAFDetectionModule(BaseModule):
         self.waf_bypass_techniques: List[str] = []
     
     async def run(self) -> Dict[str, Any]:
-        """
-        Execute WAF detection
-        
-        Returns:
-            WAF detection results
-        """
+      
         self.logger.info(f"Starting WAF detection for {self.target}")
         
         # Passive detection
@@ -138,7 +121,7 @@ class WAFDetectionModule(BaseModule):
         return self.get_results()
     
     async def _passive_detection(self) -> Dict[str, Any]:
-        """Passive WAF detection from headers and cookies"""
+
         self.logger.info("Performing passive WAF detection")
         
         assets = []
@@ -214,7 +197,7 @@ class WAFDetectionModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _active_detection(self) -> Dict[str, Any]:
-        """Active WAF detection by sending attack payloads"""
+
         self.logger.info("Performing active WAF detection")
         
         assets = []
@@ -292,7 +275,7 @@ class WAFDetectionModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     def _get_bypass_techniques(self, waf_names: set) -> List[str]:
-        """Get WAF bypass techniques for detected WAFs"""
+
         techniques = []
         
         bypass_db = {

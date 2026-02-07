@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Scan State Management Module
-
-Manages the state of the scanning process, including:
-- Current scan phase and progress
-- Discovered assets and findings
-- Statistics and metrics
-- Pause/Resume functionality
-"""
 
 import json
 import pickle
@@ -24,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScanPhase(Enum):
-    """Scan execution phases"""
+
     INITIALIZING = "initializing"
     RECONNAISSANCE = "reconnaissance"
     DISCOVERY = "discovery"
@@ -37,7 +28,7 @@ class ScanPhase(Enum):
 
 
 class ScanStatus(Enum):
-    """Scan execution status"""
+
     PENDING = "pending"
     RUNNING = "running"
     PAUSED = "paused"
@@ -47,7 +38,7 @@ class ScanStatus(Enum):
 
 @dataclass
 class ScanStatistics:
-    """Scan execution statistics"""
+
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     total_requests: int = 0
@@ -64,7 +55,7 @@ class ScanStatistics:
     parameters_found: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
+
         return {
             'start_time': self.start_time.isoformat() if self.start_time else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
@@ -85,7 +76,7 @@ class ScanStatistics:
     
     @property
     def duration(self) -> float:
-        """Calculate scan duration in seconds"""
+
         if self.start_time and self.end_time:
             return (self.end_time - self.start_time).total_seconds()
         elif self.start_time:
@@ -94,7 +85,7 @@ class ScanStatistics:
     
     @property
     def success_rate(self) -> float:
-        """Calculate request success rate"""
+
         if self.total_requests > 0:
             return (self.successful_requests / self.total_requests) * 100
         return 0.0
@@ -102,7 +93,7 @@ class ScanStatistics:
 
 @dataclass
 class DiscoveredAsset:
-    """Represents a discovered asset"""
+
     type: str  # url, parameter, endpoint, technology, etc.
     value: str
     source: str  # How it was discovered
@@ -123,7 +114,7 @@ class DiscoveredAsset:
 
 @dataclass
 class Finding:
-    """Represents a security finding"""
+
     id: str
     title: str
     description: str
@@ -161,24 +152,9 @@ class Finding:
 
 
 class ScanState:
-    """
-    Manages the complete state of a scan
-    
-    Thread-safe state management for:
-    - Scan progress and phase
-    - Discovered assets
-    - Security findings
-    - Statistics
-    - Pause/Resume support
-    """
     
     def __init__(self, config):
-        """
-        Initialize scan state
         
-        Args:
-            config: ConfigurationManager instance
-        """
         self.config = config
         self._lock = threading.RLock()
         
@@ -218,7 +194,7 @@ class ScanState:
         logger.debug(f"Scan state initialized: {self.scan_id}")
     
     def _generate_scan_id(self) -> str:
-        """Generate unique scan ID"""
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         import random
         random_suffix = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
@@ -227,26 +203,25 @@ class ScanState:
     # Status Management
     
     def set_status(self, status: ScanStatus):
-        """Update scan status"""
+
         with self._lock:
             self.status = status
             logger.debug(f"Scan status changed to: {status.value}")
     
     def set_phase(self, phase: ScanPhase):
-        """Update scan phase"""
+
         with self._lock:
             self.phase = phase
             logger.info(f"Scan phase: {phase.value}")
     
     def set_progress(self, progress: float):
-        """Update scan progress (0-100)"""
+
         with self._lock:
             self.progress = max(0.0, min(100.0, progress))
     
     # Asset Management
-    
     def add_asset(self, asset: DiscoveredAsset):
-        """Add discovered asset"""
+
         with self._lock:
             self.assets.append(asset)
             
@@ -267,7 +242,7 @@ class ScanState:
             logger.debug(f"Asset discovered: {asset.type} - {asset.value}")
     
     def add_finding(self, finding: Finding):
-        """Add security finding"""
+    
         with self._lock:
             self.findings.append(finding)
             self.statistics.total_findings += 1
@@ -288,20 +263,19 @@ class ScanState:
             logger.info(f"Finding added: [{finding.severity.upper()}] {finding.title}")
     
     def add_visited_url(self, url: str):
-        """Mark URL as visited"""
+
         with self._lock:
             self.visited_urls.add(url)
             self.statistics.pages_scanned = len(self.visited_urls)
     
     def is_url_visited(self, url: str) -> bool:
-        """Check if URL has been visited"""
+
         with self._lock:
             return url in self.visited_urls
     
     # Request Statistics
-    
     def increment_requests(self, success: bool = True):
-        """Increment request counter"""
+
         with self._lock:
             self.statistics.total_requests += 1
             if success:
@@ -310,29 +284,26 @@ class ScanState:
                 self.statistics.failed_requests += 1
     
     # Module State Management
-    
     def set_module_state(self, module: str, state: Dict[str, Any]):
-        """Set module-specific state"""
+
         with self._lock:
             self.module_states[module] = state
     
     def get_module_state(self, module: str) -> Optional[Dict[str, Any]]:
-        """Get module-specific state"""
+
         with self._lock:
             return self.module_states.get(module)
     
     # AI Insights
-    
     def add_ai_insight(self, insight: Dict[str, Any]):
-        """Add AI-generated insight"""
+
         with self._lock:
             self.ai_insights.append(insight)
             logger.debug(f"AI insight added: {insight.get('type', 'unknown')}")
     
     # Error Handling
-    
     def add_error(self, error: str, context: Dict[str, Any] = None):
-        """Add error to state"""
+
         with self._lock:
             self.errors.append({
                 'error': error,
@@ -342,7 +313,7 @@ class ScanState:
             logger.error(f"Scan error: {error}")
     
     def add_warning(self, warning: str, context: Dict[str, Any] = None):
-        """Add warning to state"""
+
         with self._lock:
             self.warnings.append({
                 'warning': warning,
@@ -352,14 +323,8 @@ class ScanState:
             logger.warning(f"Scan warning: {warning}")
     
     # Serialization
-    
     def save(self, filepath: str):
-        """
-        Save state to file for resume capability
-        
-        Args:
-            filepath: Path to save state file
-        """
+       
         with self._lock:
             try:
                 state_data = {
@@ -393,12 +358,7 @@ class ScanState:
                 logger.error(f"Failed to save state: {e}")
     
     def load(self, filepath: str):
-        """
-        Load state from file
         
-        Args:
-            filepath: Path to state file
-        """
         with self._lock:
             try:
                 with open(filepath, 'rb') as f:
@@ -431,7 +391,6 @@ class ScanState:
                 logger.error(f"Failed to load state: {e}")
     
     # Export Methods
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert state to dictionary"""
         with self._lock:
@@ -456,16 +415,16 @@ class ScanState:
             }
     
     def get_findings_by_severity(self, severity: str) -> List[Finding]:
-        """Get findings filtered by severity"""
+
         with self._lock:
             return [f for f in self.findings if f.severity.lower() == severity.lower()]
     
     def get_findings_by_category(self, category: str) -> List[Finding]:
-        """Get findings filtered by category"""
+
         with self._lock:
             return [f for f in self.findings if f.category.lower() == category.lower()]
     
     def get_high_confidence_findings(self, threshold: float = 0.8) -> List[Finding]:
-        """Get findings with confidence above threshold"""
+
         with self._lock:
             return [f for f in self.findings if f.confidence >= threshold]

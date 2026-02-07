@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Main Scan Engine Module
-
-Orchestrates all scanning operations, manages modules,
-and coordinates the complete scanning workflow.
-"""
 
 import asyncio
 import importlib
@@ -22,31 +16,26 @@ logger = logging.getLogger(__name__)
 
 
 class ModuleRegistry:
-    """
-    Registry for all scanning modules
-    
-    Manages module discovery, registration, and lifecycle.
-    """
-    
+
     def __init__(self):
         self._modules: Dict[str, Type] = {}
         self._instances: Dict[str, Any] = {}
     
     def register(self, name: str, module_class: Type):
-        """Register a module class"""
+
         self._modules[name] = module_class
         logger.debug(f"Module registered: {name}")
     
     def get(self, name: str) -> Optional[Type]:
-        """Get module class by name"""
+
         return self._modules.get(name)
     
     def get_instance(self, name: str) -> Optional[Any]:
-        """Get module instance by name"""
+
         return self._instances.get(name)
     
     def create_instance(self, name: str, *args, **kwargs) -> Optional[Any]:
-        """Create module instance"""
+
         module_class = self.get(name)
         if module_class:
             instance = module_class(*args, **kwargs)
@@ -55,16 +44,11 @@ class ModuleRegistry:
         return None
     
     def list_modules(self) -> List[str]:
-        """List all registered module names"""
+
         return list(self._modules.keys())
     
     def discover_modules(self, modules_path: Path):
-        """
-        Auto-discover modules from directory
         
-        Args:
-            modules_path: Path to modules directory
-        """
         if not modules_path.exists():
             logger.warning(f"Modules path not found: {modules_path}")
             return
@@ -90,26 +74,9 @@ class ModuleRegistry:
 
 
 class ScanEngine:
-    """
-    Main Scanning Engine
-    
-    Coordinates all scanning activities:
-    - Module execution
-    - HTTP request management
-    - Rate limiting
-    - State management
-    - Result aggregation
-    """
-    
+
     def __init__(self, config, state: ScanState, ai_analyzer=None):
-        """
-        Initialize scan engine
-        
-        Args:
-            config: Configuration manager
-            state: Scan state manager
-            ai_analyzer: AI analyzer instance (optional)
-        """
+       
         self.config = config
         self.state = state
         self.ai_analyzer = ai_analyzer
@@ -130,7 +97,7 @@ class ScanEngine:
         logger.debug("Scan engine initialized")
     
     async def initialize(self):
-        """Initialize all engine components"""
+
         try:
             # Initialize HTTP client
             self.http_client = HTTPClient(self.config)
@@ -145,6 +112,78 @@ class ScanEngine:
             modules_path = Path(__file__).parent.parent / "modules"
             self.module_registry.discover_modules(modules_path)
             
+            # Manually register analysis module from AI components
+            try:
+                from ai.analyzer import AIAnalyzer
+                # Create a wrapper class that follows the BaseModule interface
+                class AnalysisModuleWrapper:
+                    MODULE_NAME = "analysis"
+                    MODULE_DESCRIPTION = "AI-powered analysis module"
+                    
+                    def __init__(self, config, state, http_client, ai_analyzer=None):
+                        self.config = config
+                        self.state = state
+                        self.http_client = http_client
+                        self.ai_analyzer = ai_analyzer or AIAnalyzer(config)
+                        self.logger = logging.getLogger("modules.analysis")
+                    
+                    async def initialize(self):
+
+                        if not self.ai_analyzer.http_client and self.http_client:
+                            await self.ai_analyzer.initialize(self.http_client)
+                    
+                    async def run(self) -> Dict[str, Any]:
+
+                        self.logger.info("Running AI analysis module")
+                        
+                        try:
+                            # Analyze findings
+                            findings_analysis = await self.ai_analyzer.analyze_findings(
+                                self.state.findings
+                            )
+                            
+                            # Correlate findings
+                            correlations = await self.ai_analyzer.correlate_findings(
+                                self.state.findings,
+                                self.state.assets
+                            )
+                            
+                            # Generate insights
+                            scan_data = self.state.to_dict()
+                            insights = await self.ai_analyzer.generate_insights(scan_data)
+                            
+                            # Add to state
+                            for insight in insights:
+                                self.state.add_ai_insight(insight)
+                            
+                            self.logger.info("AI analysis complete")
+                            return {
+                                'module': self.MODULE_NAME,
+                                'success': True,
+                                'analysis': findings_analysis,
+                                'correlations': [asdict(c) for c in correlations],
+                                'insights': insights
+                            }
+                            
+                        except Exception as e:
+                            self.logger.error(f"AI analysis failed: {e}")
+                            return {
+                                'module': self.MODULE_NAME,
+                                'success': False,
+                                'error': str(e)
+                            }
+                    
+                    def cleanup(self):
+
+                        pass
+                
+                # Register the wrapper class
+                self.module_registry.register("analysis", AnalysisModuleWrapper)
+                logger.info("Manually registered analysis module")
+                
+            except Exception as e:
+                logger.warning(f"Failed to register analysis module: {e}")
+            
             # Initialize enabled modules
             await self._initialize_modules()
             
@@ -155,7 +194,7 @@ class ScanEngine:
             raise
     
     async def _initialize_modules(self):
-        """Initialize all enabled modules"""
+
         enabled_modules = self._get_enabled_modules()
         
         for module_name in enabled_modules:
@@ -179,7 +218,7 @@ class ScanEngine:
                 logger.error(f"Failed to initialize module {module_name}: {e}")
     
     def _get_enabled_modules(self) -> List[str]:
-        """Get list of enabled modules based on configuration"""
+
         mode = self.config.get('scan.mode', 'standard')
         
         # Define module sets for each mode
@@ -205,12 +244,7 @@ class ScanEngine:
         return enabled
     
     async def execute(self) -> Dict[str, Any]:
-        """
-        Execute complete scanning workflow
         
-        Returns:
-            Dictionary containing all scan results
-        """
         self.state.set_status(ScanStatus.RUNNING)
         self.state.statistics.start_time = datetime.now()
         
@@ -224,9 +258,9 @@ class ScanEngine:
             # Phase 3: Vulnerability Scanning
             await self._run_phase(ScanPhase.VULNERABILITY_SCAN, ['vulnerability'])
             
-            # Phase 4: Analysis (Deep/AI modes)
-            if self.config.get('scan.mode') in ['deep', 'ai']:
-                await self._run_phase(ScanPhase.ANALYSIS, ['analysis'])
+            # Phase 4: SSL Analysis (if enabled and in deep mode)
+            if 'ssl' in self.modules and self.config.get('scan.mode') in ['deep', 'ai']:
+                await self._run_phase(ScanPhase.ANALYSIS, ['ssl'])
             
             # Phase 5: AI Analysis (if enabled)
             if self.ai_analyzer and self.config.get('ai.enabled'):
@@ -248,13 +282,7 @@ class ScanEngine:
             raise
     
     async def _run_phase(self, phase: ScanPhase, module_names: List[str]):
-        """
-        Execute a scanning phase
         
-        Args:
-            phase: Phase to execute
-            module_names: List of modules to run in this phase
-        """
         self.state.set_phase(phase)
         logger.info(f"Starting phase: {phase.value}")
         
@@ -285,12 +313,7 @@ class ScanEngine:
         self._update_progress()
     
     async def _run_module(self, module):
-        """
-        Execute a single module
         
-        Args:
-            module: Module instance to run
-        """
         try:
             # Wait if paused
             await self._pause_event.wait()
@@ -312,7 +335,7 @@ class ScanEngine:
             raise
     
     async def _run_ai_analysis(self):
-        """Run AI-powered analysis on collected data"""
+
         if not self.ai_analyzer:
             return
         
@@ -320,6 +343,9 @@ class ScanEngine:
         
         try:
             # Analyze findings
+            if not self.ai_analyzer.http_client and self.http_client:
+                await self.ai_analyzer.initialize(self.http_client)
+            
             findings_analysis = await self.ai_analyzer.analyze_findings(
                 self.state.findings
             )
@@ -331,9 +357,8 @@ class ScanEngine:
             )
             
             # Generate insights
-            insights = await self.ai_analyzer.generate_insights(
-                self.state.to_dict()
-            )
+            scan_data = self.state.to_dict()
+            insights = await self.ai_analyzer.generate_insights(scan_data)
             
             # Add to state
             for insight in insights:
@@ -345,7 +370,7 @@ class ScanEngine:
             logger.error(f"AI analysis failed: {e}")
     
     def _update_progress(self):
-        """Update scan progress based on completed phases"""
+
         phase_weights = {
             ScanPhase.INITIALIZING: 0,
             ScanPhase.RECONNAISSANCE: 20,
@@ -360,7 +385,7 @@ class ScanEngine:
         self.state.set_progress(current_weight)
     
     def _compile_results(self) -> Dict[str, Any]:
-        """Compile all scan results"""
+
         return {
             'scan_info': {
                 'scan_id': self.state.scan_id,
@@ -393,30 +418,30 @@ class ScanEngine:
     # Control Methods
     
     def pause(self):
-        """Pause scanning"""
+
         self._pause_event.clear()
         self.state.set_status(ScanStatus.PAUSED)
         logger.info("Scan paused")
     
     def resume(self):
-        """Resume scanning"""
+
         self._pause_event.set()
         self.state.set_status(ScanStatus.RUNNING)
         logger.info("Scan resumed")
     
     def stop(self):
-        """Request scan stop"""
+
         self._stop_requested = True
         logger.info("Stop requested")
     
     async def save_state(self):
-        """Save current state for resume"""
+
         state_file = Path(self.config.get('report.output_dir', './reports')) / f"{self.state.scan_id}.state"
         state_file.parent.mkdir(parents=True, exist_ok=True)
         self.state.save(str(state_file))
     
     async def cleanup(self):
-        """Cleanup resources"""
+
         try:
             # Cleanup modules
             for name, module in self.modules.items():

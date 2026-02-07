@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Logging Configuration Module
-"""
 
 import logging
 import sys
@@ -12,7 +9,6 @@ from colorama import Fore, Style
 
 
 class ColoredFormatter(logging.Formatter):
-    """Custom formatter with colored output"""
     
     COLORS = {
         'DEBUG': Fore.BLUE,
@@ -28,16 +24,8 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
-def setup_logging(level: str = 'INFO', log_file: str = None, 
-                  format_string: str = None):
-    """
-    Setup logging configuration
+def setup_logging(level: str = 'INFO', log_file: str = None, format_string: str = None):
     
-    Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Path to log file (optional)
-        format_string: Custom format string
-    """
     # Create logger
     logger = logging.getLogger()
     logger.setLevel(getattr(logging, level.upper()))

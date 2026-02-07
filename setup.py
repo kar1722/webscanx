@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-WebScanX Setup Script
-
-Installation script for WebScanX web application security scanner
-"""
 
 from setuptools import setup, find_packages
 from pathlib import Path

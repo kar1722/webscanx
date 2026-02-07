@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Discovery Module
-
-Discovers hidden paths, files, and endpoints:
-- Directory brute forcing
-- File discovery
-- API endpoint discovery
-- Parameter discovery
-- Content enumeration
-"""
 
 import asyncio
 from typing import Dict, Any, List, Optional, Set
@@ -24,9 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class DiscoveryModule(BaseModule):
-    """
-    Content discovery and enumeration module
-    """
     
     MODULE_NAME = "discovery"
     MODULE_DESCRIPTION = "Content discovery and endpoint enumeration"
@@ -68,7 +55,7 @@ class DiscoveryModule(BaseModule):
         self.discovered_params: Dict[str, Set[str]] = {}
     
     def _load_wordlist(self, wordlist_type: str, defaults: List[str]) -> List[str]:
-        """Load wordlist from file or use defaults"""
+
         wordlist_path = self.config.get_wordlist_path(wordlist_type)
         
         if wordlist_path and Path(wordlist_path).exists():
@@ -81,12 +68,7 @@ class DiscoveryModule(BaseModule):
         return defaults
     
     async def run(self) -> Dict[str, Any]:
-        """
-        Execute discovery
         
-        Returns:
-            Discovery results
-        """
         self.logger.info(f"Starting content discovery for {self.base_url}")
         
         tasks = [
@@ -116,7 +98,7 @@ class DiscoveryModule(BaseModule):
         return self.get_results()
     
     async def _discover_directories(self) -> Dict[str, Any]:
-        """Discover hidden directories"""
+
         self.logger.info("Discovering directories")
         
         assets = []
@@ -126,12 +108,12 @@ class DiscoveryModule(BaseModule):
         mode = self.config.get('scan.mode')
         wordlist = self.dirs_wordlist[:20] if mode == 'silent' else self.dirs_wordlist
         
-        # Create tasks for directory brute forcing
-        tasks = []
+        # Create paths list
+        paths_to_check = []
         for directory in wordlist:
             for ext in [''] if mode == 'silent' else self.DEFAULT_EXTENSIONS[:3]:
                 path = f"/{directory}{ext}"
-                tasks.append(self._check_path(path))
+                paths_to_check.append(path)
         
         # Execute with concurrency limit
         semaphore = asyncio.Semaphore(self.config.get('scan.threads', 10))
@@ -140,13 +122,16 @@ class DiscoveryModule(BaseModule):
             async with semaphore:
                 return await self._check_path(path)
         
-        results = await asyncio.gather(
-            *[bounded_check(path) for path in [t for t in tasks]],
-            return_exceptions=True
-        )
+        # Create tasks for each path
+        tasks = [bounded_check(path) for path in paths_to_check]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
         # Process results
         for result in results:
+            if isinstance(result, Exception):
+                self.logger.debug(f"Directory check failed: {result}")
+                continue
+                
             if isinstance(result, dict) and result.get('exists'):
                 path = result['path']
                 self.discovered_paths.add(path)
@@ -179,7 +164,7 @@ class DiscoveryModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _discover_files(self) -> Dict[str, Any]:
-        """Discover sensitive files"""
+
         self.logger.info("Discovering sensitive files")
         
         assets = []
@@ -246,7 +231,7 @@ class DiscoveryModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _analyze_robots_txt(self) -> Dict[str, Any]:
-        """Analyze robots.txt for hidden paths"""
+
         self.logger.info("Analyzing robots.txt")
         
         assets = []
@@ -308,7 +293,7 @@ class DiscoveryModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _discover_parameters(self) -> Dict[str, Any]:
-        """Discover URL parameters"""
+
         self.logger.info("Discovering parameters")
         
         assets = []
@@ -354,7 +339,7 @@ class DiscoveryModule(BaseModule):
         return {'assets': assets, 'findings': []}
     
     async def _enumerate_api_endpoints(self) -> Dict[str, Any]:
-        """Enumerate API endpoints"""
+
         self.logger.info("Enumerating API endpoints")
         
         assets = []
@@ -407,7 +392,7 @@ class DiscoveryModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _check_path(self, path: str) -> Dict[str, Any]:
-        """Check if a path exists"""
+
         try:
             url = urljoin(self.base_url, path)
             response = await self.http_client.get(url)

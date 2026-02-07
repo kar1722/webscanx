@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Configuration Management Module
-
-Handles all configuration settings, command line arguments,
-and configuration file operations for WebScanX.
-"""
 
 import json
 import yaml
@@ -19,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ScanConfig:
-    """Scan-specific configuration"""
+
     mode: str = 'standard'
     threads: int = 10
     timeout: int = 30
@@ -34,7 +28,7 @@ class ScanConfig:
 
 @dataclass
 class AuthConfig:
-    """Authentication configuration"""
+
     enabled: bool = False
     type: str = 'none'  # none, basic, bearer, cookie
     username: Optional[str] = None
@@ -46,7 +40,7 @@ class AuthConfig:
 
 @dataclass
 class AIConfig:
-    """AI analysis configuration"""
+
     enabled: bool = False
     model: str = 'default'
     correlation_enabled: bool = True
@@ -59,7 +53,7 @@ class AIConfig:
 
 @dataclass
 class ReportConfig:
-    """Report generation configuration"""
+
     formats: List[str] = field(default_factory=lambda: ['json', 'html'])
     output_dir: str = './reports'
     template: Optional[str] = None
@@ -70,7 +64,7 @@ class ReportConfig:
 
 @dataclass
 class ModuleConfig:
-    """Module-specific configuration"""
+
     enabled_modules: Optional[List[str]] = None
     disabled_modules: Optional[List[str]] = None
     wordlist_path: Optional[str] = None
@@ -79,15 +73,6 @@ class ModuleConfig:
 
 
 class ConfigManager:
-    """
-    Central Configuration Manager
-    
-    Manages all configuration aspects of WebScanX including:
-    - Command line arguments
-    - Configuration files (JSON/YAML)
-    - Default settings
-    - Runtime configuration updates
-    """
     
     DEFAULT_CONFIG = {
         'scan': {
@@ -163,12 +148,7 @@ class ConfigManager:
     }
     
     def __init__(self, args=None):
-        """
-        Initialize configuration manager
-        
-        Args:
-            args: Command line arguments from argparse
-        """
+       
         self._config = self._load_default_config()
         self._args = args
         
@@ -183,16 +163,11 @@ class ConfigManager:
         logger.debug("Configuration initialized")
     
     def _load_default_config(self) -> Dict[str, Any]:
-        """Load default configuration"""
+
         return json.loads(json.dumps(self.DEFAULT_CONFIG))
     
     def _apply_args(self, args):
-        """
-        Apply command line arguments to configuration
-        
-        Args:
-            args: Parsed command line arguments
-        """
+       
         # Target
         if hasattr(args, 'target') and args.target:
             self._config['target'] = args.target
@@ -291,16 +266,7 @@ class ConfigManager:
             self._config['logging']['level'] = 'ERROR'
     
     def get(self, key: str, default: Any = None) -> Any:
-        """
-        Get configuration value using dot notation
         
-        Args:
-            key: Configuration key (e.g., 'scan.mode', 'auth.enabled')
-            default: Default value if key not found
-            
-        Returns:
-            Configuration value or default
-        """
         keys = key.split('.')
         value = self._config
         
@@ -313,13 +279,7 @@ class ConfigManager:
         return value
     
     def set(self, key: str, value: Any):
-        """
-        Set configuration value using dot notation
-        
-        Args:
-            key: Configuration key
-            value: Value to set
-        """
+       
         keys = key.split('.')
         config = self._config
         
@@ -332,12 +292,7 @@ class ConfigManager:
         logger.debug(f"Config updated: {key} = {value}")
     
     def load_from_file(self, filepath: str):
-        """
-        Load configuration from file (JSON or YAML)
-        
-        Args:
-            filepath: Path to configuration file
-        """
+      
         path = Path(filepath)
         
         if not path.exists():
@@ -358,12 +313,7 @@ class ConfigManager:
             logger.error(f"Failed to load config file: {e}")
     
     def save_to_file(self, filepath: str):
-        """
-        Save current configuration to file
         
-        Args:
-            filepath: Path to save configuration
-        """
         path = Path(filepath)
         
         try:
@@ -379,13 +329,7 @@ class ConfigManager:
             logger.error(f"Failed to save config file: {e}")
     
     def _deep_update(self, d: Dict, u: Dict):
-        """
-        Deep update dictionary
         
-        Args:
-            d: Base dictionary
-            u: Update dictionary
-        """
         for k, v in u.items():
             if isinstance(v, dict) and k in d and isinstance(d[k], dict):
                 self._deep_update(d[k], v)
@@ -393,51 +337,35 @@ class ConfigManager:
                 d[k] = v
     
     def get_scan_config(self) -> ScanConfig:
-        """Get scan configuration as dataclass"""
+
         return ScanConfig(**self._config.get('scan', {}))
     
     def get_auth_config(self) -> AuthConfig:
-        """Get authentication configuration as dataclass"""
+
         return AuthConfig(**self._config.get('auth', {}))
     
     def get_ai_config(self) -> AIConfig:
-        """Get AI configuration as dataclass"""
+
         return AIConfig(**self._config.get('ai', {}))
     
     def get_report_config(self) -> ReportConfig:
-        """Get report configuration as dataclass"""
+
         return ReportConfig(**self._config.get('report', {}))
     
     def get_module_config(self) -> ModuleConfig:
-        """Get module configuration as dataclass"""
+
         return ModuleConfig(**self._config.get('modules', {}))
     
     def get_all(self) -> Dict[str, Any]:
-        """Get complete configuration dictionary"""
+
         return self._config.copy()
     
     def is_module_enabled(self, module_name: str) -> bool:
-        """
-        Check if a module is enabled
         
-        Args:
-            module_name: Name of the module
-            
-        Returns:
-            True if module is enabled
-        """
         return self._config.get('modules', {}).get(module_name, False)
     
     def get_wordlist_path(self, wordlist_type: str) -> Optional[str]:
-        """
-        Get path to wordlist file
         
-        Args:
-            wordlist_type: Type of wordlist (directories, files, payloads, etc.)
-            
-        Returns:
-            Path to wordlist file or None
-        """
         path = self._config.get('wordlists', {}).get(wordlist_type)
         if path:
             full_path = PROJECT_ROOT / path
@@ -450,16 +378,14 @@ class ConfigManager:
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 config: Optional[ConfigManager] = None
 
-
 def init_config(args=None) -> ConfigManager:
-    """Initialize global configuration"""
+
     global config
     config = ConfigManager(args)
     return config
 
-
 def get_config() -> ConfigManager:
-    """Get global configuration instance"""
+
     if config is None:
         raise RuntimeError("Configuration not initialized")
     return config

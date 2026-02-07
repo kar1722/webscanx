@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Rate Limiter Module
-
-Controls request rate to avoid overwhelming target
-"""
 
 import asyncio
 import time
@@ -15,23 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
-    """
-    Token bucket rate limiter
-    
-    Controls the rate of requests to prevent:
-    - Overwhelming the target server
-    - Being blocked by WAF/IPS
-    - Triggering rate limits
-    """
     
     def __init__(self, rate: float, burst: int = 1):
-        """
-        Initialize rate limiter
         
-        Args:
-            rate: Maximum requests per second
-            burst: Maximum burst size
-        """
         self.rate = rate
         self.burst = burst
         self.tokens = burst
@@ -41,7 +22,7 @@ class RateLimiter:
         logger.debug(f"Rate limiter initialized: {rate} req/s, burst: {burst}")
     
     async def acquire(self):
-        """Acquire permission to make a request"""
+
         async with self._lock:
             now = time.time()
             elapsed = now - self.last_update

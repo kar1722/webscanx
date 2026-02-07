@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Banner Display Module
-"""
 
 from colorama import Fore, Style
 

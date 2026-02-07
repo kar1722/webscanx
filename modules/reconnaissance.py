@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Reconnaissance Module
-
-Performs initial reconnaissance:
-- DNS enumeration
-- Subdomain discovery
-- Technology fingerprinting
-- Server information gathering
-- SSL/TLS analysis
-"""
 
 import asyncio
 import socket
@@ -26,9 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class ReconnaissanceModule(BaseModule):
-    """
-    Reconnaissance and information gathering module
-    """
     
     MODULE_NAME = "reconnaissance"
     MODULE_DESCRIPTION = "Initial reconnaissance and information gathering"
@@ -40,16 +27,11 @@ class ReconnaissanceModule(BaseModule):
         self.domain = self.parsed_url.hostname
         
     async def initialize(self):
-        """Initialize reconnaissance module"""
+
         self.logger.info(f"Initializing reconnaissance for {self.domain}")
     
     async def run(self) -> Dict[str, Any]:
-        """
-        Execute reconnaissance
-        
-        Returns:
-            Reconnaissance results
-        """
+     
         self.logger.info(f"Starting reconnaissance for {self.domain}")
         
         tasks = [
@@ -80,7 +62,7 @@ class ReconnaissanceModule(BaseModule):
         return self.get_results()
     
     async def _gather_dns_info(self) -> Dict[str, Any]:
-        """Gather DNS information"""
+
         self.logger.info("Gathering DNS information")
         
         assets = []
@@ -159,7 +141,7 @@ class ReconnaissanceModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _analyze_ssl_cert(self) -> Dict[str, Any]:
-        """Analyze SSL/TLS certificate"""
+
         if self.parsed_url.scheme != 'https':
             return {'assets': [], 'findings': []}
         
@@ -207,7 +189,6 @@ class ReconnaissanceModule(BaseModule):
                     
                     # Check certificate expiration
                     from datetime import datetime
-                    import ssl
                     
                     not_after = cert.get('notAfter')
                     if not_after:
@@ -259,7 +240,7 @@ class ReconnaissanceModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _fingerprint_technology(self) -> Dict[str, Any]:
-        """Fingerprint web technologies"""
+
         self.logger.info("Fingerprinting technologies")
         
         assets = []
@@ -331,7 +312,7 @@ class ReconnaissanceModule(BaseModule):
         return {'assets': assets, 'findings': []}
     
     async def _gather_server_info(self) -> Dict[str, Any]:
-        """Gather server information"""
+
         self.logger.info("Gathering server information")
         
         assets = []
@@ -391,7 +372,7 @@ class ReconnaissanceModule(BaseModule):
         return {'assets': assets, 'findings': findings}
     
     async def _discover_subdomains(self) -> Dict[str, Any]:
-        """Discover subdomains"""
+
         self.logger.info("Discovering subdomains")
         
         assets = []
@@ -451,7 +432,7 @@ class ReconnaissanceModule(BaseModule):
             return {'subdomain': subdomain, 'exists': False}
     
     async def _analyze_headers(self) -> Dict[str, Any]:
-        """Analyze security headers"""
+
         self.logger.info("Analyzing security headers")
         
         findings = []
@@ -528,11 +509,9 @@ class ReconnaissanceModule(BaseModule):
         return {'assets': [], 'findings': findings}
     
     async def _query_mx(self, domain: str) -> List[str]:
-        """Query MX records"""
         # Simplified MX query
         return []
     
     async def _query_txt(self, domain: str) -> List[str]:
-        """Query TXT records"""
         # Simplified TXT query
         return []

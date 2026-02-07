@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI Analysis Module
-
-Provides AI-powered analysis capabilities:
-- Finding correlation and relationship analysis
-- Context-aware vulnerability assessment
-- Pattern recognition
-- Intelligent prioritization
-- Learning from previous scans
-"""
 
 import json
 import re
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from .payload_generator import AIPayloadGenerator
+from .injection_engine import AdaptiveInjectionEngine
+
 from pathlib import Path
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+
 @dataclass
 class CorrelationResult:
-    """Represents a correlation between findings"""
+
     finding_ids: List[str]
     correlation_type: str
     confidence: float
@@ -32,40 +30,28 @@ class CorrelationResult:
 
 
 class AIAnalyzer:
-    """
-    AI-powered security analysis engine
-    
-    Provides intelligent analysis of scan results including:
-    - Finding correlation and chaining
-    - Context-aware severity assessment
-    - Attack path generation
-    - False positive reduction
-    - Pattern recognition
-    """
     
     def __init__(self, config):
-        """
-        Initialize AI analyzer
         
-        Args:
-            config: Configuration manager
-        """
         self.config = config
         self.enabled = config.get('ai.enabled', False)
         self.model = config.get('ai.model', 'default')
         self.confidence_threshold = config.get('ai.confidence_threshold', 0.7)
         self.learning_enabled = config.get('ai.learning_enabled', True)
         
-        # Learning data
         self.learned_patterns: List[Dict] = []
         self.false_positive_patterns: List[str] = []
         
-        # Load learned data if available
+        self.payload_generator = AIPayloadGenerator()
+        self.injection_engine = None
+        self.http_client = None  
+        
+
         self._load_learned_data()
         
         logger.debug("AI analyzer initialized")
     
-    async def initialize(self):
+    async def initialize(self, http_client=None):
         """Initialize AI components"""
         if not self.enabled:
             logger.info("AI analysis is disabled")
@@ -73,12 +59,64 @@ class AIAnalyzer:
         
         logger.info("Initializing AI analysis engine")
         
+
+        if http_client:
+            self.http_client = http_client
+        
         # In a real implementation, this would load ML models
         # For now, we use rule-based analysis
         self._initialize_rule_engine()
+        
+
+        if self.http_client:
+            self.injection_engine = AdaptiveInjectionEngine(self.http_client, self.config)
+        else:
+            logger.warning("HTTP client not provided, injection engine will not be available")
     
+    async def smart_attack(self, target_url, parameters, vulnerability_type):
+        
+        if not self.injection_engine:
+            logger.error("Injection engine not initialized. Call initialize() first with http_client.")
+            return []
+        
+        results = []
+        
+        for param, value in parameters.items():
+            context = {
+                'technology': self._detect_technology(target_url),
+                'waf_detected': self._check_waf(target_url),
+                'previous_attacks': self._get_attack_history(target_url, param)
+            }
+            
+            injection_result = await self.injection_engine.test_injection(
+                url=target_url,
+                param=param,
+                param_value=value,
+                vulnerability_type=vulnerability_type,
+                context=context
+            )
+            
+            if injection_result['vulnerable']:
+                results.append(injection_result)
+        
+        return results
+    
+    def _detect_technology(self, url):
+
+        # يمكن تطوير هذه الدالة لاحقاً لتحليل حقيقي
+        return "unknown"
+    
+    def _check_waf(self, url):
+
+        # يمكن تطوير هذه الدالة لاحقاً
+        return False
+    
+    def _get_attack_history(self, url, param):
+
+        return []
+
     def _initialize_rule_engine(self):
-        """Initialize rule-based analysis engine"""
+
         self.correlation_rules = [
             {
                 'name': 'SQLi + Information Disclosure',
@@ -148,15 +186,7 @@ class AIAnalyzer:
         ]
     
     async def analyze_findings(self, findings: List[Any]) -> Dict[str, Any]:
-        """
-        Analyze findings with AI
         
-        Args:
-            findings: List of findings to analyze
-            
-        Returns:
-            Analysis results
-        """
         if not self.enabled:
             return {'status': 'disabled'}
         
@@ -174,16 +204,7 @@ class AIAnalyzer:
         return analysis
     
     async def correlate_findings(self, findings: List[Any], assets: List[Any]) -> List[CorrelationResult]:
-        """
-        Find correlations between findings
-        
-        Args:
-            findings: List of findings
-            assets: List of discovered assets
-            
-        Returns:
-            List of correlations
-        """
+       
         if not self.enabled:
             return []
         
@@ -191,31 +212,23 @@ class AIAnalyzer:
         
         correlations = []
         
-        # Apply correlation rules
+
         for rule in self.correlation_rules:
             matches = self._apply_correlation_rule(rule, findings)
             correlations.extend(matches)
         
-        # Detect patterns
+
         for rule in self.pattern_rules:
             pattern_matches = rule['detector'](findings, assets)
             correlations.extend(pattern_matches)
         
-        # Sort by confidence
+
         correlations.sort(key=lambda x: x.confidence, reverse=True)
         
         return correlations
     
     async def generate_insights(self, scan_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Generate AI insights from scan data
-        
-        Args:
-            scan_data: Complete scan data
-            
-        Returns:
-            List of insights
-        """
+       
         if not self.enabled:
             return []
         
@@ -223,7 +236,6 @@ class AIAnalyzer:
         
         insights = []
         
-        # Security posture assessment
         posture = self._assess_security_posture(scan_data)
         insights.append({
             'type': 'security_posture',
@@ -233,7 +245,6 @@ class AIAnalyzer:
             'confidence': posture['confidence']
         })
         
-        # Attack surface analysis
         attack_surface = self._analyze_attack_surface(scan_data)
         insights.append({
             'type': 'attack_surface',
@@ -243,7 +254,6 @@ class AIAnalyzer:
             'confidence': attack_surface['confidence']
         })
         
-        # Remediation prioritization
         remediation = self._prioritize_remediation(scan_data)
         insights.append({
             'type': 'remediation',
@@ -256,23 +266,23 @@ class AIAnalyzer:
         return insights
     
     def _apply_correlation_rule(self, rule: Dict, findings: List[Any]) -> List[CorrelationResult]:
-        """Apply a correlation rule to findings"""
+
         correlations = []
         
-        # Find findings matching the rule
+
         matching_findings = []
         for finding in findings:
             if finding.category.lower() in rule['finding_types']:
-                # Check additional conditions
+
                 conditions = rule.get('conditions', {})
                 if finding.category.lower() in conditions:
                     if not conditions[finding.category.lower()](finding.to_dict()):
                         continue
                 matching_findings.append(finding)
         
-        # Check if we have enough matches
+
         if len(matching_findings) >= len(rule['finding_types']):
-            # Group by URL for stronger correlation
+
             url_groups = {}
             for f in matching_findings:
                 url = getattr(f, 'url', '')
@@ -294,7 +304,7 @@ class AIAnalyzer:
         return correlations
     
     def _detect_tech_concentration(self, findings: List[Any], assets: List[Any]) -> List[CorrelationResult]:
-        """Detect concentration of vulnerabilities in specific technologies"""
+
         correlations = []
         
         # Group findings by technology
@@ -319,7 +329,7 @@ class AIAnalyzer:
         return correlations
     
     def _detect_defense_failure(self, findings: List[Any], assets: List[Any]) -> List[CorrelationResult]:
-        """Detect multiple failing security controls"""
+
         correlations = []
         
         # Count security control failures
@@ -387,7 +397,7 @@ class AIAnalyzer:
         return correlations
     
     def _analyze_severity(self, findings: List[Any]) -> Dict[str, int]:
-        """Analyze severity distribution"""
+
         distribution = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
         
         for finding in findings:
@@ -398,7 +408,7 @@ class AIAnalyzer:
         return distribution
     
     def _analyze_categories(self, findings: List[Any]) -> Dict[str, int]:
-        """Analyze category distribution"""
+
         distribution = {}
         
         for finding in findings:
@@ -408,7 +418,7 @@ class AIAnalyzer:
         return distribution
     
     async def _assess_risk(self, findings: List[Any]) -> Dict[str, Any]:
-        """Assess overall risk level"""
+
         severity_dist = self._analyze_severity(findings)
         
         # Calculate risk score
@@ -436,7 +446,7 @@ class AIAnalyzer:
         }
     
     def _prioritize_findings(self, findings: List[Any]) -> List[Dict[str, Any]]:
-        """Prioritize findings based on multiple factors"""
+
         prioritized = []
         
         for finding in findings:
@@ -469,7 +479,7 @@ class AIAnalyzer:
         return prioritized
     
     def _estimate_false_positives(self, findings: List[Any]) -> Dict[str, Any]:
-        """Estimate false positive probability"""
+
         fp_indicators = {
             'low_confidence': 0.3,
             'generic_error': 0.2,
@@ -498,7 +508,7 @@ class AIAnalyzer:
         return estimates
     
     def _assess_security_posture(self, scan_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assess overall security posture"""
+
         findings = scan_data.get('findings', [])
         
         if not findings:
@@ -536,7 +546,7 @@ class AIAnalyzer:
             }
     
     def _analyze_attack_surface(self, scan_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze attack surface"""
+
         summary = scan_data.get('summary', {})
         
         endpoints = summary.get('endpoints_discovered', 0)
@@ -565,7 +575,7 @@ class AIAnalyzer:
         }
     
     def _prioritize_remediation(self, scan_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Prioritize remediation efforts"""
+
         findings = scan_data.get('findings', [])
         
         if not findings:
@@ -608,7 +618,7 @@ class AIAnalyzer:
         }
     
     def _load_learned_data(self):
-        """Load learned patterns from previous scans"""
+
         learn_file = Path('ai_learning.json')
         if learn_file.exists():
             try:
@@ -620,7 +630,7 @@ class AIAnalyzer:
                 logger.debug(f"Failed to load learned data: {e}")
     
     def _save_learned_data(self):
-        """Save learned patterns"""
+
         if not self.learning_enabled:
             return
         
@@ -634,6 +644,6 @@ class AIAnalyzer:
             logger.debug(f"Failed to save learned data: {e}")
     
     async def cleanup(self):
-        """Cleanup AI resources"""
+
         self._save_learned_data()
         logger.info("AI analyzer cleanup complete")

@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-HTTP Client Module
-
-Advanced HTTP client with:
-- Connection pooling
-- Proxy support
-- Custom headers
-- Rate limiting
-- Retry logic
-"""
 
 import asyncio
 import aiohttp
@@ -22,24 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPClient:
-    """
-    Advanced asynchronous HTTP client
-    
-    Features:
-    - Connection pooling
-    - Automatic retries
-    - Proxy support
-    - Custom SSL handling
-    - Request/Response interception
-    """
     
     def __init__(self, config):
-        """
-        Initialize HTTP client
-        
-        Args:
-            config: Configuration manager
-        """
+    
         self.config = config
         self.session: Optional[aiohttp.ClientSession] = None
         self.connector: Optional[aiohttp.TCPConnector] = None
@@ -65,7 +40,7 @@ class HTTPClient:
         logger.debug("HTTP client initialized")
     
     def _create_ssl_context(self) -> ssl.SSLContext:
-        """Create SSL context based on configuration"""
+
         verify_ssl = self.config.get('scan.verify_ssl', False)
         
         if verify_ssl:
@@ -78,7 +53,7 @@ class HTTPClient:
         return context
     
     async def initialize(self):
-        """Initialize HTTP session"""
+
         # Create connector with connection pooling
         self.connector = aiohttp.TCPConnector(
             limit=100,
@@ -99,17 +74,7 @@ class HTTPClient:
         logger.info("HTTP session initialized")
     
     async def request(self, method: str, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """
-        Make HTTP request
-        
-        Args:
-            method: HTTP method
-            url: Request URL
-            **kwargs: Additional request parameters
-            
-        Returns:
-            ClientResponse object
-        """
+  
         if not self.session:
             raise RuntimeError("HTTP session not initialized")
         
@@ -162,35 +127,35 @@ class HTTPClient:
         raise last_error or Exception(f"Request failed after {retries} attempts")
     
     async def get(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make GET request"""
+
         return await self.request('GET', url, **kwargs)
     
     async def post(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make POST request"""
+
         return await self.request('POST', url, **kwargs)
     
     async def put(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make PUT request"""
+
         return await self.request('PUT', url, **kwargs)
     
     async def delete(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make DELETE request"""
+
         return await self.request('DELETE', url, **kwargs)
     
     async def head(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make HEAD request"""
+
         return await self.request('HEAD', url, **kwargs)
     
     async def options(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make OPTIONS request"""
+
         return await self.request('OPTIONS', url, **kwargs)
     
     async def patch(self, url: str, **kwargs) -> aiohttp.ClientResponse:
-        """Make PATCH request"""
+
         return await self.request('PATCH', url, **kwargs)
     
     def _get_auth_headers(self) -> Dict[str, str]:
-        """Get authentication headers"""
+
         headers = {}
         
         auth_config = self.config.get('auth', {})
@@ -220,35 +185,17 @@ class HTTPClient:
         return headers
     
     async def fetch_text(self, url: str, **kwargs) -> str:
-        """
-        Fetch URL and return text content
         
-        Args:
-            url: URL to fetch
-            **kwargs: Additional request parameters
-            
-        Returns:
-            Response text
-        """
         response = await self.get(url, **kwargs)
         return await response.text()
     
     async def fetch_json(self, url: str, **kwargs) -> Any:
-        """
-        Fetch URL and return JSON content
         
-        Args:
-            url: URL to fetch
-            **kwargs: Additional request parameters
-            
-        Returns:
-            Parsed JSON
-        """
         response = await self.get(url, **kwargs)
         return await response.json()
     
     async def cleanup(self):
-        """Cleanup resources"""
+
         if self.session:
             await self.session.close()
             logger.info("HTTP session closed")
@@ -257,7 +204,7 @@ class HTTPClient:
             await self.connector.close()
     
     def get_stats(self) -> Dict[str, int]:
-        """Get request statistics"""
+
         return {
             'requests': self.request_count,
             'errors': self.error_count,
