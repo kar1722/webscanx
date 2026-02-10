@@ -309,6 +309,36 @@ Modes:
         help='Proxy URL (http://host:port)'
     )
     
+    # Crawler
+    parser.add_argument(
+        '--crawl-depth',
+        type=int,
+        default=3,
+        help='عمق الزحف (default: 3)'
+    )
+    parser.add_argument(
+        '--max-pages',
+        type=int,
+        default=100,
+        help='أقصى عدد صفحات للزحف (default: 100)'
+    )
+    parser.add_argument(
+        '--concurrent-crawl',
+        type=int,
+        default=10,
+        help='عدد طلبات الزحف المتزامنة (default: 10)'
+    )
+    parser.add_argument(
+        '--no-robots',
+        action='store_true',
+        help='عدم احترام ملف robots.txt'
+    )
+    parser.add_argument(
+        '--export-sitemap',
+        action='store_true',
+        help='تصدير خريطة الموقع'
+    )
+    
     # Wordlists
     parser.add_argument(
         '-w', '--wordlist',

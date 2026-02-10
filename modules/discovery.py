@@ -396,6 +396,7 @@ class DiscoveryModule(BaseModule):
         try:
             url = urljoin(self.base_url, path)
             response = await self.http_client.get(url)
+            self.state.increment_requests(success=response.status < 400)
             
             # Consider path as existing if status is not 404
             exists = response.status not in [404, 410]
@@ -410,4 +411,5 @@ class DiscoveryModule(BaseModule):
         
         except Exception as e:
             self.logger.debug(f"Path check failed for {path}: {e}")
+            self.state.increment_requests(success=False)
             return {'path': path, 'exists': False}

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+حالة الفحص - إصدار محسن
+Scan State - Enhanced Version
+"""
+
 import json
 import pickle
 from pathlib import Path
@@ -15,11 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 class ScanPhase(Enum):
-
+    """مراحل الفحص المحددة بشكل صريح"""
     INITIALIZING = "initializing"
     RECONNAISSANCE = "reconnaissance"
+    CRAWLER = "crawler"                    # ← جديد
     DISCOVERY = "discovery"
     VULNERABILITY_SCAN = "vulnerability_scan"
+    WAF_DETECTION = "waf_detection"        # ← جديد
+    EVASION = "evasion"
     ANALYSIS = "analysis"
     REPORTING = "reporting"
     COMPLETED = "completed"
@@ -28,7 +36,7 @@ class ScanPhase(Enum):
 
 
 class ScanStatus(Enum):
-
+    """حالات الفحص"""
     PENDING = "pending"
     RUNNING = "running"
     PAUSED = "paused"
@@ -38,7 +46,7 @@ class ScanStatus(Enum):
 
 @dataclass
 class ScanStatistics:
-
+    """إحصائيات الفحص المحسنة"""
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     total_requests: int = 0
@@ -53,9 +61,14 @@ class ScanStatistics:
     pages_scanned: int = 0
     endpoints_discovered: int = 0
     parameters_found: int = 0
+    evasion_attempts: int = 0
+    waf_bypassed: int = 0
+    stealth_scans: int = 0
+    evasive_payloads: int = 0
+    payloads_sent: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
-
+        """تحويل الإحصائيات إلى قاموس"""
         return {
             'start_time': self.start_time.isoformat() if self.start_time else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
@@ -71,12 +84,14 @@ class ScanStatistics:
             'info_findings': self.info_findings,
             'pages_scanned': self.pages_scanned,
             'endpoints_discovered': self.endpoints_discovered,
-            'parameters_found': self.parameters_found
+            'parameters_found': self.parameters_found,
+            'payloads_sent': self.payloads_sent,
+            'success_rate': self.success_rate,
         }
     
     @property
     def duration(self) -> float:
-
+        """مدة الفحص بالثواني"""
         if self.start_time and self.end_time:
             return (self.end_time - self.start_time).total_seconds()
         elif self.start_time:
@@ -85,7 +100,7 @@ class ScanStatistics:
     
     @property
     def success_rate(self) -> float:
-
+        """نسبة النجاح"""
         if self.total_requests > 0:
             return (self.successful_requests / self.total_requests) * 100
         return 0.0
@@ -93,7 +108,7 @@ class ScanStatistics:
 
 @dataclass
 class DiscoveredAsset:
-
+    """أصل مكتشف"""
     type: str  # url, parameter, endpoint, technology, etc.
     value: str
     source: str  # How it was discovered
@@ -114,7 +129,7 @@ class DiscoveredAsset:
 
 @dataclass
 class Finding:
-
+    """نتيجة اكتشاف"""
     id: str
     title: str
     description: str
@@ -152,9 +167,10 @@ class Finding:
 
 
 class ScanState:
+    """حالة الفحص - يتم مشاركتها بين جميع المكونات"""
     
     def __init__(self, config):
-        
+        """تهيئة حالة الفحص"""
         self.config = config
         self._lock = threading.RLock()
         
@@ -194,38 +210,44 @@ class ScanState:
         logger.debug(f"Scan state initialized: {self.scan_id}")
     
     def _generate_scan_id(self) -> str:
-
+        """توليد معرف فحص فريد"""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         import random
         random_suffix = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
         return f"scan_{timestamp}_{random_suffix}"
     
-    # Status Management
+    # ==================== إدارة الحالة ====================
     
     def set_status(self, status: ScanStatus):
-
+        """تعيين حالة الفحص"""
         with self._lock:
+            old_status = self.status
             self.status = status
-            logger.debug(f"Scan status changed to: {status.value}")
+            logger.debug(f"Scan status: {old_status.value} → {status.value}")
     
     def set_phase(self, phase: ScanPhase):
-
+        """تعيين مرحلة الفحص"""
         with self._lock:
+            old_phase = self.phase
             self.phase = phase
-            logger.info(f"Scan phase: {phase.value}")
+            logger.info(f"Scan phase: {old_phase.value} → {phase.value}")
     
     def set_progress(self, progress: float):
-
+        """تعيين نسبة التقدم"""
         with self._lock:
             self.progress = max(0.0, min(100.0, progress))
     
-    # Asset Management
+    # ==================== إدارة الأصول ====================
+    
     def add_asset(self, asset: DiscoveredAsset):
-
+        """إضافة أصل مكتشف"""
         with self._lock:
             self.assets.append(asset)
             
             if asset.type == 'endpoint':
+                self.discovered_endpoints.add(asset.value)
+                self.statistics.endpoints_discovered = len(self.discovered_endpoints)
+            elif asset.type == 'api_endpoint':
                 self.discovered_endpoints.add(asset.value)
                 self.statistics.endpoints_discovered = len(self.discovered_endpoints)
             elif asset.type == 'parameter':
@@ -239,10 +261,10 @@ class ScanState:
             elif asset.type == 'technology':
                 self.technologies[asset.value] = asset.metadata
             
-            logger.debug(f"Asset discovered: {asset.type} - {asset.value}")
+            logger.debug(f"Asset added: {asset.type} - {asset.value[:50]}...")
     
     def add_finding(self, finding: Finding):
-    
+        """إضافة نتيجة اكتشاف"""
         with self._lock:
             self.findings.append(finding)
             self.statistics.total_findings += 1
@@ -263,47 +285,61 @@ class ScanState:
             logger.info(f"Finding added: [{finding.severity.upper()}] {finding.title}")
     
     def add_visited_url(self, url: str):
-
+        """إضافة URL تمت زيارته"""
         with self._lock:
             self.visited_urls.add(url)
             self.statistics.pages_scanned = len(self.visited_urls)
     
     def is_url_visited(self, url: str) -> bool:
-
+        """التحقق إذا كان URL تمت زيارته"""
         with self._lock:
             return url in self.visited_urls
     
-    # Request Statistics
-    def increment_requests(self, success: bool = True):
-
+    # ==================== إحصائيات الطلبات ====================
+    
+    def increment_requests(self, success: bool = True, url: str = None):
+        """زيادة عداد الطلبات"""
         with self._lock:
             self.statistics.total_requests += 1
             if success:
                 self.statistics.successful_requests += 1
             else:
                 self.statistics.failed_requests += 1
+            
+            if url:
+                self.visited_urls.add(url)
+                self.statistics.pages_scanned = len(self.visited_urls)
     
-    # Module State Management
+    def increment_payloads(self, count: int = 1):
+        """زيادة عداد الحمولات المرسلة"""
+        with self._lock:
+            self.statistics.payloads_sent += count
+            logger.debug(f"Payloads sent: {self.statistics.payloads_sent}")
+    
+    # ==================== إدارة حالة الوحدات ====================
+    
     def set_module_state(self, module: str, state: Dict[str, Any]):
-
+        """تعيين حالة وحدة"""
         with self._lock:
             self.module_states[module] = state
     
     def get_module_state(self, module: str) -> Optional[Dict[str, Any]]:
-
+        """الحصول على حالة وحدة"""
         with self._lock:
             return self.module_states.get(module)
     
-    # AI Insights
+    # ==================== رؤى AI ====================
+    
     def add_ai_insight(self, insight: Dict[str, Any]):
-
+        """إضافة رؤية ذكاء اصطناعي"""
         with self._lock:
             self.ai_insights.append(insight)
             logger.debug(f"AI insight added: {insight.get('type', 'unknown')}")
     
-    # Error Handling
+    # ==================== معالجة الأخطاء ====================
+    
     def add_error(self, error: str, context: Dict[str, Any] = None):
-
+        """إضافة خطأ"""
         with self._lock:
             self.errors.append({
                 'error': error,
@@ -313,7 +349,7 @@ class ScanState:
             logger.error(f"Scan error: {error}")
     
     def add_warning(self, warning: str, context: Dict[str, Any] = None):
-
+        """إضافة تحذير"""
         with self._lock:
             self.warnings.append({
                 'warning': warning,
@@ -322,9 +358,10 @@ class ScanState:
             })
             logger.warning(f"Scan warning: {warning}")
     
-    # Serialization
+    # ==================== التسلسل ====================
+    
     def save(self, filepath: str):
-       
+        """حفظ الحالة إلى ملف"""
         with self._lock:
             try:
                 state_data = {
@@ -358,7 +395,7 @@ class ScanState:
                 logger.error(f"Failed to save state: {e}")
     
     def load(self, filepath: str):
-        
+        """تحميل الحالة من ملف"""
         with self._lock:
             try:
                 with open(filepath, 'rb') as f:
@@ -370,6 +407,26 @@ class ScanState:
                 self.status = ScanStatus(state_data.get('status', 'pending'))
                 self.phase = ScanPhase(state_data.get('phase', 'initializing'))
                 self.progress = state_data.get('progress', 0.0)
+                
+                # Restore statistics
+                stats_data = state_data.get('statistics', {})
+                self.statistics = ScanStatistics(
+                    start_time=datetime.fromisoformat(stats_data['start_time']) if stats_data.get('start_time') else None,
+                    end_time=datetime.fromisoformat(stats_data['end_time']) if stats_data.get('end_time') else None,
+                    total_requests=stats_data.get('total_requests', 0),
+                    successful_requests=stats_data.get('successful_requests', 0),
+                    failed_requests=stats_data.get('failed_requests', 0),
+                    total_findings=stats_data.get('total_findings', 0),
+                    critical_findings=stats_data.get('critical_findings', 0),
+                    high_findings=stats_data.get('high_findings', 0),
+                    medium_findings=stats_data.get('medium_findings', 0),
+                    low_findings=stats_data.get('low_findings', 0),
+                    info_findings=stats_data.get('info_findings', 0),
+                    pages_scanned=stats_data.get('pages_scanned', 0),
+                    endpoints_discovered=stats_data.get('endpoints_discovered', 0),
+                    parameters_found=stats_data.get('parameters_found', 0),
+                    payloads_sent=stats_data.get('payloads_sent', 0)
+                )
                 
                 # Restore collections
                 self.visited_urls = set(state_data.get('visited_urls', []))
@@ -390,9 +447,10 @@ class ScanState:
             except Exception as e:
                 logger.error(f"Failed to load state: {e}")
     
-    # Export Methods
+    # ==================== تصدير البيانات ====================
+    
     def to_dict(self) -> Dict[str, Any]:
-        """Convert state to dictionary"""
+        """تحويل الحالة إلى قاموس"""
         with self._lock:
             return {
                 'scan_id': self.scan_id,
@@ -415,16 +473,16 @@ class ScanState:
             }
     
     def get_findings_by_severity(self, severity: str) -> List[Finding]:
-
+        """الحصول على النتائج حسب الخطورة"""
         with self._lock:
             return [f for f in self.findings if f.severity.lower() == severity.lower()]
     
     def get_findings_by_category(self, category: str) -> List[Finding]:
-
+        """الحصول على النتائج حسب الفئة"""
         with self._lock:
             return [f for f in self.findings if f.category.lower() == category.lower()]
     
     def get_high_confidence_findings(self, threshold: float = 0.8) -> List[Finding]:
-
+        """الحصول على النتائج ذات الثقة العالية"""
         with self._lock:
             return [f for f in self.findings if f.confidence >= threshold]

@@ -81,6 +81,11 @@ class ConfigManager:
             'timeout': 30,
             'delay': 0.0,
             'retries': 3,
+            'evasion': False,
+            'stealth': False,
+            'evasion_level': 'medium',
+            'max_evasion_attempts': 3,
+            'stealth_timeout': 60,
             'follow_redirects': True,
             'verify_ssl': False,
             'max_depth': 3,
@@ -133,6 +138,14 @@ class ConfigManager:
             'extensions': ['.jpg', '.jpeg', '.png', '.gif', '.css', '.js', '.svg', '.woff', '.woff2', '.ttf', '.eot'],
             'paths': ['/logout', '/exit', '/signout'],
             'status_codes': [404, 410, 500, 502, 503]
+        },
+        'crawler': {
+            'enabled': True,
+            'max_depth': 3,
+            'max_pages': 100,
+            'max_concurrent': 10,
+            'dynamic': True,  # ← جديد: تفعيل الزحف الديناميكي
+            'respect_robots': True,
         },
         'vulnerability': {
             'severity_levels': ['critical', 'high', 'medium', 'low', 'info'],
@@ -193,6 +206,25 @@ class ConfigManager:
         
         if hasattr(args, 'scope') and args.scope:
             self._config['scan']['scope'] = args.scope
+            
+        if hasattr(args, 'evasion') and args.evasion:
+            self._config['scan']['evasion'] = True
+    
+        if hasattr(args, 'stealth') and args.stealth:
+            self._config['scan']['stealth'] = True
+    
+        if hasattr(args, 'evasion_level') and args.evasion_level:
+            self._config['scan']['evasion_level'] = args.evasion_level 
+               
+        # Crawler
+        if hasattr(args, 'crawl_depth') and args.crawl_depth:
+            self._config['crawler']['max_depth'] = args.crawl_depth
+
+        if hasattr(args, 'max_pages') and args.max_pages:
+            self._config['crawler']['max_pages'] = args.max_pages
+
+        if hasattr(args, 'concurrent_crawl') and args.concurrent_crawl:
+            self._config['crawler']['max_concurrent'] = args.concurrent_crawl
         
         # Authentication
         if hasattr(args, 'auth') and args.auth:

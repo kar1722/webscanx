@@ -8,6 +8,8 @@ import logging
 
 from modules.base import BaseModule
 from core.state import DiscoveredAsset, Finding
+from core.waf_evader import SmartWAFEvader
+from utils.encoding import MultiLayerEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +97,8 @@ class WAFDetectionModule(BaseModule):
       
         self.logger.info(f"Starting WAF detection for {self.target}")
         
+        waf_evader = SmartWAFEvader()
+        
         # Passive detection
         passive_results = await self._passive_detection()
         
@@ -130,6 +134,7 @@ class WAFDetectionModule(BaseModule):
         try:
             # Make normal request
             response = await self.http_client.get(self.target)
+            self.state.increment_requests(success=True)
             headers = dict(response.headers)
             cookies = response.cookies
             
@@ -206,6 +211,7 @@ class WAFDetectionModule(BaseModule):
         try:
             # Send benign request for baseline
             baseline_response = await self.http_client.get(self.target)
+            self.state.increment_requests(success=True)
             baseline_status = baseline_response.status
             baseline_content = await baseline_response.text()
             

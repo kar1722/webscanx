@@ -247,6 +247,7 @@ class ReconnaissanceModule(BaseModule):
         
         try:
             response = await self.http_client.get(self.target)
+            self.state.increment_requests(success=True)
             headers = dict(response.headers)
             
             # Analyze headers for technology detection
@@ -308,6 +309,7 @@ class ReconnaissanceModule(BaseModule):
             
         except Exception as e:
             self.logger.error(f"Technology fingerprinting failed: {e}")
+            self.state.increment_requests(success=False)
         
         return {'assets': assets, 'findings': []}
     
@@ -321,6 +323,7 @@ class ReconnaissanceModule(BaseModule):
         try:
             # Make request and analyze response
             response = await self.http_client.get(self.target)
+            self.state.increment_requests(success=True)
             
             # Check for information disclosure
             headers = dict(response.headers)
@@ -368,6 +371,7 @@ class ReconnaissanceModule(BaseModule):
             
         except Exception as e:
             self.logger.error(f"Server info gathering failed: {e}")
+            self.state.increment_requests(success=False)
         
         return {'assets': assets, 'findings': findings}
     
@@ -439,6 +443,7 @@ class ReconnaissanceModule(BaseModule):
         
         try:
             response = await self.http_client.get(self.target)
+            self.state.increment_requests(success=True)
             headers = {k.lower(): v for k, v in response.headers.items()}
             
             # Security headers to check
@@ -505,6 +510,7 @@ class ReconnaissanceModule(BaseModule):
         
         except Exception as e:
             self.logger.error(f"Header analysis failed: {e}")
+            self.state.increment_requests(success=False)
         
         return {'assets': [], 'findings': findings}
     
