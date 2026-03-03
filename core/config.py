@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import json
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    yaml = None
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field, asdict
@@ -334,6 +337,10 @@ class ConfigManager:
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 if path.suffix in ['.yaml', '.yml']:
+                    if yaml is None:
+                        raise RuntimeError(
+                            "PyYAML is required to load YAML configs. Install it or use JSON."
+                        )
                     data = yaml.safe_load(f)
                 else:
                     data = json.load(f)
@@ -351,6 +358,10 @@ class ConfigManager:
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 if path.suffix in ['.yaml', '.yml']:
+                    if yaml is None:
+                        raise RuntimeError(
+                            "PyYAML is required to save YAML configs. Install it or use JSON."
+                        )
                     yaml.dump(self._config, f, default_flow_style=False)
                 else:
                     json.dump(self._config, f, indent=2)
